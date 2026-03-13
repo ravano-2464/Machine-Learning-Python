@@ -1,10 +1,6 @@
-# <div align="center">🚀 Touchless Object Detector SDK</div>
+# 🚀 Touchless Object Detector SDK
 
-<div align="center">
-
-Python SDK untuk workflow object detection bergaya scanner: deteksi target, crop area, flatten perspective, enhance image, lalu export hasil.
-
-</div>
+Python SDK untuk workflow object detection bergaya scanner, lengkap dengan web frontend untuk upload gambar dan melihat hasil `annotated`, `crop`, `flattened`, `enhanced`, serta metadata scan langsung di browser.
 
 <div align="center">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
@@ -13,42 +9,36 @@ Python SDK untuk workflow object detection bergaya scanner: deteksi target, crop
   <img src="https://img.shields.io/badge/PyTorch-Custom%20Training-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" alt="PyTorch">
 </div>
 
----
+## 📖 Overview
 
-## 🎯 Overview
+Project ini berfokus pada alur yang lebih dekat ke aplikasi scanner touchless:
 
-Repo ini sekarang diarahkan untuk use case SDK yang lebih dekat ke aplikasi scanner touchless:
+- deteksi objek target dengan YOLOv8
+- pilih target utama berdasarkan confidence
+- crop area target dengan padding opsional
+- flatten perspective agar permukaan lebih rapi
+- enhance image untuk hasil yang lebih siap dipakai downstream
+- hitung quality score dan measurement sederhana
+- tampilkan output lewat CLI atau frontend web
 
-- deteksi objek target dengan YOLO
-- pilih target terbaik
-- crop area target
-- flatten perspective agar area lebih rapi
-- enhance hasil crop agar siap diproses lebih lanjut
-- export metadata dan image hasil scan
+Repo ini cocok untuk:
 
-Fokusnya bukan sekadar bounding box, tetapi pipeline yang lebih cocok untuk integrasi aplikasi scanning berbasis kamera.
-
----
+- prototyping alur deteksi + preprocessing gambar
+- validasi hasil model custom
+- demo lokal ke user atau stakeholder tanpa buka folder output manual
+- dasar integrasi ke API atau aplikasi kamera
 
 ## ✨ Features
 
 | Area | Keterangan |
 | --- | --- |
-| Detection SDK | Load model, detect object, pilih target utama |
+| Detection SDK | Load model, jalankan inference, dan ubah hasil ke format Python dict |
 | Scanner Pipeline | Crop, perspective rectification, enhancement, quality scoring |
-| Measurements | Hitung ukuran pixel dan estimasi pixel per mm |
-| Training | Training custom detector dengan dataset sendiri |
-| Export | Export model `.pt` ke `onnx`, `tflite`, atau `coreml` |
-| Demo | CLI demo untuk inference dan export hasil scan |
-
----
-
-## 🛠️ Tech Stack
-
-- `ultralytics`
-- `opencv-python`
-- `numpy`
-- `torch`
+| Measurements | Hitung lebar/tinggi pixel dan estimasi pixel per mm |
+| CLI Demo | Jalankan scan dari terminal dan export file hasil |
+| Web Frontend | Upload gambar via browser dan lihat semua output scan |
+| Training | Train model custom berbasis Ultralytics YOLO |
+| Export | Export weights `.pt` ke `onnx`, `tflite`, atau `coreml` |
 
 Install dependency:
 
@@ -56,96 +46,120 @@ Install dependency:
 pip install -r requirements.txt
 ```
 
----
-
 ## 📁 Project Structure
 
 ```text
 Machine Learning/
 |-- configs/
-|   `-- biometric_data.example.yaml     # Template dataset YAML untuk training custom
+|   `-- biometric_data.example.yaml
 |-- examples/
-|   `-- demo.py                         # Demo CLI untuk detect, scan, dan export hasil
+|   `-- demo.py
 |-- sdk/
-|   |-- __init__.py                     # Public export untuk package SDK
-|   |-- detector.py                     # Class utama ObjectDetectorSDK
-|   |-- image_ops.py                    # Utility crop, rectify, enhance, annotate, scoring
-|   `-- types.py                        # Dataclass Detection dan ScanResult
-|-- export_model.py                     # Script export model ke onnx / tflite / coreml
-|-- train.py                            # Script training model YOLO custom
-|-- requirements.txt                    # Dependency Python project
-|-- .gitignore                          # Ignore cache, weights, runs, dan output lokal
-`-- README.md                           # Dokumentasi utama project
+|   |-- __init__.py
+|   |-- detector.py
+|   |-- image_ops.py
+|   `-- types.py
+|-- webapp/
+|   |-- __init__.py
+|   |-- app.py
+|   |-- static/
+|   |   |-- app.js
+|   |   `-- styles.css
+|   `-- templates/
+|       `-- index.html
+|-- export_model.py
+|-- train.py
+|-- requirements.txt
+|-- README.md
+`-- yolov8n.pt
 ```
-
-### 🗂️ Breakdown Struktur
-
-| Path | Isi |
-| --- | --- |
-| `configs/` | Menyimpan template atau konfigurasi dataset/training |
-| `examples/` | Contoh entry point untuk menjalankan SDK dari CLI |
-| `sdk/` | Package inti yang berisi logic object detection scanner-style |
-| `sdk/detector.py` | Orkestrasi inference, target selection, measurement, scan pipeline, dan export |
-| `sdk/image_ops.py` | Operasi citra level rendah untuk preprocessing dan postprocessing |
-| `sdk/types.py` | Struktur data hasil deteksi dan hasil scan agar output konsisten |
-| `train.py` | Menjalankan training model custom berbasis Ultralytics YOLO |
-| `export_model.py` | Menyiapkan model hasil training untuk deployment lintas platform |
-| `.gitignore` | Menjaga file artefak lokal tidak ikut ke version control |
-
-### 📄 Main Files
-
-| File | Fungsi |
-| --- | --- |
-| `sdk/detector.py` | SDK utama untuk detect, scan, annotate, dan export |
-| `sdk/image_ops.py` | Utility image pipeline untuk crop, flatten, enhancement, scoring |
-| `sdk/types.py` | Tipe data hasil deteksi dan scan |
-| `examples/demo.py` | Contoh pemakaian CLI |
-| `train.py` | Training custom detector |
-| `export_model.py` | Export model ke format deployment |
-| `configs/biometric_data.example.yaml` | Template dataset YAML |
-
----
 
 ## ⚡ Quick Start
 
-### 1. 📦 Siapkan dependency
+### 1. 📦 Install dependency
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Jika `torch` belum cocok dengan device Anda, pasang versi CPU/GPU yang sesuai.
+### 2. 🤖 Siapkan model weights
 
-### 2. 🤖 Siapkan weights
+Default repo ini memakai `yolov8n.pt`, tetapi Anda juga bisa memakai hasil training sendiri, misalnya:
 
-Gunakan salah satu dari berikut:
+```text
+runs/train/scanner_sdk/weights/best.pt
+```
 
-- `yolov8n.pt`
-- hasil training sendiri, misalnya `runs/train/scanner_sdk/weights/best.pt`
+### 3. 🌐 Jalankan lewat frontend web
 
-### 3. ▶️ Jalankan demo scanner
+```bash
+python -m webapp.app
+```
+
+Setelah server aktif, buka:
+
+```text
+http://127.0.0.1:5000
+```
+
+Yang bisa dilakukan dari frontend:
+
+- upload gambar melalui browser
+- atur `weights`, `device`, `confidence`, `image size`, dan `padding ratio`
+- isi `target label` jika hanya ingin label tertentu
+- isi `reference width/height` untuk menghitung estimasi pixel per mm
+- lihat output visual dan metadata langsung di halaman
+
+### 4. 💻 Jalankan lewat CLI
 
 ```bash
 python examples/demo.py --image path/to/input.jpg --out-dir examples/output --weights yolov8n.pt
 ```
 
-Jika Anda menjalankan script lewat tombol Run di editor tanpa argumen, simpan dulu satu gambar di folder `examples/input/`. Script akan otomatis memakai gambar pertama dari folder tersebut.
+Jika Anda menjalankan tanpa `--image`, script akan mencoba mengambil gambar pertama dari folder `examples/input/`.
 
-Output yang dihasilkan:
+## 🎨 Web Frontend
 
-- `annotated.jpg`
-- `scan_crop.jpg`
-- `scan_flattened.jpg`
-- `scan_enhanced.jpg`
-- `scan_metadata.json`
+Frontend ada di folder `webapp/` dan memakai Flask sebagai backend ringan.
 
----
+### 🖼️ Tampilan hasil di browser
 
-## 🧠 SDK Usage
+Web UI akan menampilkan:
 
-Class utama ada di `sdk.detector.ObjectDetectorSDK`.
+- original input
+- annotated detection
+- crop target
+- flattened surface
+- enhanced output
+- tabel deteksi
+- JSON metadata hasil scan
+- measurement cards dan quality meter
 
-### 💡 Contoh penggunaan
+### 🔌 Endpoint utama
+
+| Endpoint | Method | Fungsi |
+| --- | --- | --- |
+| `/` | `GET` | Render halaman frontend |
+| `/scan` | `POST` | Jalankan inference dan mengembalikan JSON hasil scan |
+| `/health` | `GET` | Health check sederhana |
+
+### 🧾 Parameter form frontend
+
+| Field | Fungsi |
+| --- | --- |
+| `image` | File gambar input |
+| `weights` | Path weights model |
+| `device` | `cpu` atau `cuda` |
+| `conf` | Confidence threshold |
+| `imgsz` | Ukuran input inference |
+| `padding_ratio` | Padding tambahan saat crop |
+| `target_label` | Filter target berdasarkan label atau class id |
+| `reference_width_mm` | Referensi lebar fisik untuk estimasi pixel/mm |
+| `reference_height_mm` | Referensi tinggi fisik untuk estimasi pixel/mm |
+
+## ⌨️ CLI Usage
+
+Contoh pemakaian SDK di Python:
 
 ```python
 from sdk.detector import ObjectDetectorSDK
@@ -162,48 +176,33 @@ result = sdk.scan(
 print(result.to_dict())
 ```
 
-### 🧾 Hasil scan
+Contoh CLI lengkap:
 
-Result akan berisi:
+```bash
+python examples/demo.py --image path/to/input.jpg --out-dir examples/output --weights yolov8n.pt --device cpu --conf 0.25 --imgsz 640
+```
 
-- daftar semua deteksi
-- target utama yang dipilih
-- ukuran image sumber
-- crop hasil target
-- image yang sudah di-flatten
-- image yang sudah di-enhance
-- quality score
-- measurement metadata
+Output file CLI:
 
----
+- `annotated.jpg`
+- `scan_crop.jpg`
+- `scan_flattened.jpg`
+- `scan_enhanced.jpg`
+- `scan_metadata.json`
 
 ## 🏋️ Training Model
 
-Repo ini sudah menyiapkan pipeline training untuk model object detector custom, tetapi model final tetap harus dilatih memakai dataset target Anda sendiri.
+Template dataset ada di:
 
-### 🗂️ Template dataset
+`configs/biometric_data.example.yaml`
 
-Template awal ada di:
-
-```text
-configs/biometric_data.example.yaml
-```
-
-Isi kelas default saat ini:
-
-- `single_finger`
-- `multi_finger`
-- `palm`
-
-Anda bisa ubah nama kelas sesuai objek target Anda.
-
-### 💻 Command training
+Contoh training:
 
 ```bash
 python train.py --data configs/biometric_data.example.yaml --model yolov8n.pt --epochs 50 --batch 16 --imgsz 640 --device cpu
 ```
 
-### 📌 Argument penting
+Argumen penting:
 
 | Argument | Fungsi |
 | --- | --- |
@@ -216,60 +215,93 @@ python train.py --data configs/biometric_data.example.yaml --model yolov8n.pt --
 | `--project` | Folder output training |
 | `--name` | Nama eksperimen |
 
----
-
 ## 📤 Export Model
 
-Setelah training selesai, export model ke format deployment.
-
-### 🔄 Contoh export ke ONNX
+Contoh export ke ONNX:
 
 ```bash
 python export_model.py --weights runs/train/scanner_sdk/weights/best.pt --format onnx --imgsz 640 --device cpu
 ```
 
-### 📚 Format export
+Format export yang didukung:
 
 - `onnx`
 - `tflite`
 - `coreml`
 
----
-
 ## 🔁 Typical Workflow
 
 ```text
-Collect dataset -> Label dataset -> Train detector -> Run scanner pipeline -> Export model -> Integrate to app
+Collect dataset -> Label dataset -> Train detector -> Run scan pipeline -> Review output in frontend -> Export model -> Integrate to app
 ```
 
-Command ringkas:
+Contoh alur ringkas:
 
 ```bash
 python train.py --data configs/biometric_data.example.yaml --model yolov8n.pt --epochs 50
-python examples/demo.py --image sample.jpg --out-dir examples/output --weights runs/train/scanner_sdk/weights/best.pt
+python -m webapp.app
 python export_model.py --weights runs/train/scanner_sdk/weights/best.pt --format onnx
 ```
 
----
+## 🧠 Output Schema
+
+`ScanResult.to_dict()` mengembalikan struktur ringkas seperti berikut:
+
+```json
+{
+  "image_shape": [720, 1280],
+  "detections": [],
+  "target": null,
+  "crop_shape": null,
+  "flattened_shape": null,
+  "enhanced_shape": null,
+  "quality": 0.0,
+  "measurements": {}
+}
+```
+
+Frontend akan membungkus hasil tersebut dengan `summary`, `images`, dan `detections` agar mudah dirender di browser.
 
 ## 📝 Notes
 
-- SDK ini sudah punya alur yang lebih dekat ke aplikasi scanner touchless, tetapi belum bisa menghasilkan model akurat tanpa dataset training yang sesuai domain Anda
-- Jika target Anda spesifik seperti jari, telapak, dokumen, atau komponen tertentu, dataset harus mengikuti objek tersebut
-- `scan_metadata.json` menyimpan ringkasan hasil scan untuk integrasi downstream
-- Semua file Python di repo ini sudah dibersihkan dari komentar dan docstring
+- Akurasi model tetap bergantung pada dataset dan training Anda
+- Frontend ini dirancang untuk demo lokal dan validasi hasil, belum untuk deployment production
+- Jika memakai `cuda`, pastikan environment Torch Anda memang mendukung GPU
+- Default maksimal ukuran upload di web app adalah 10 MB per gambar
 
----
+## 🩹 Troubleshooting
+
+### ❌ Model tidak ditemukan
+
+Pastikan nilai `weights` mengarah ke file `.pt` yang valid, misalnya `yolov8n.pt` atau `runs/train/scanner_sdk/weights/best.pt`.
+
+### 🖼️ Gambar gagal dibaca
+
+Gunakan salah satu format yang didukung:
+
+- `.jpg`
+- `.jpeg`
+- `.png`
+- `.bmp`
+- `.webp`
+
+### 🌐 Frontend tidak tampil
+
+Pastikan server dijalankan dari root project:
+
+```bash
+python -m webapp.app
+```
+
+Lalu buka `http://127.0.0.1:5000`.
 
 ## 🌱 Next Improvements
 
-- Tambahkan dataset nyata untuk domain target
-- Tambahkan evaluasi metrik seperti mAP dan confusion matrix
-- Tambahkan API service dengan FastAPI
-- Tambahkan paket pip agar SDK mudah dipasang di proyek lain
-
----
+- tambahkan penyimpanan history scan
+- tambahkan endpoint API terpisah untuk integrasi eksternal
+- tambahkan evaluasi metrik seperti mAP dan confusion matrix
+- tambahkan autentikasi jika web app dipakai multi-user
 
 ## 📜 License
 
-Silakan tambahkan lisensi sesuai kebutuhan distribusi proyek Anda.
+Silakan tambahkan lisensi sesuai kebutuhan distribusi project Anda.

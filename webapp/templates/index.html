@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scanner Vision Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="hero">
+            <div class="hero-copy">
+                <p class="eyebrow">Touchless Scanner Interface</p>
+                <h1>Upload gambar, jalankan model, dan lihat seluruh output scan langsung dari frontend.</h1>
+                <p class="hero-text">
+                    Halaman ini memakai pipeline yang sama dengan SDK Python: deteksi objek, anotasi bounding box,
+                    crop area target, rectification perspective, enhancement image, lalu tampilkan metadata hasilnya.
+                </p>
+            </div>
+            <div class="hero-panel">
+                <div class="hero-stat">
+                    <span>Model default</span>
+                    <strong>{{ config.weights }}</strong>
+                </div>
+                <div class="hero-stat">
+                    <span>Inference size</span>
+                    <strong>{{ config.imgsz }} px</strong>
+                </div>
+                <div class="hero-stat">
+                    <span>Confidence</span>
+                    <strong>{{ config.conf }}</strong>
+                </div>
+                <div class="hero-note">
+                    Frontend ini cocok untuk demo lokal, validasi hasil model, dan presentasi output tanpa buka folder hasil manual.
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard">
+            <section class="panel control-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="section-kicker">Input</p>
+                        <h2>Scan Control Center</h2>
+                    </div>
+                    <p class="section-text">Drag and drop gambar atau pilih file, lalu proses dengan parameter inference yang bisa disesuaikan.</p>
+                </div>
+
+                <form id="scan-form" class="scan-form">
+                    <label class="upload-zone" for="image">
+                        <input id="image" name="image" type="file" accept=".jpg,.jpeg,.png,.bmp,.webp" required>
+                        <span class="upload-title">Tarik file ke sini atau klik untuk memilih gambar</span>
+                        <span class="upload-subtitle" id="file-label">Belum ada file yang dipilih</span>
+                    </label>
+
+                    <div class="field-grid">
+                        <label>
+                            <span>Weights</span>
+                            <input name="weights" type="text" value="{{ config.weights }}" placeholder="yolov8n.pt">
+                        </label>
+                        <label>
+                            <span>Device</span>
+                            <select name="device">
+                                <option value="cpu" {% if config.device == "cpu" %}selected{% endif %}>CPU</option>
+                                <option value="cuda">CUDA</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Confidence</span>
+                            <input name="conf" type="number" value="{{ config.conf }}" min="0.01" max="0.99" step="0.01">
+                        </label>
+                        <label>
+                            <span>Image Size</span>
+                            <input name="imgsz" type="number" value="{{ config.imgsz }}" min="128" max="1280" step="32">
+                        </label>
+                        <label>
+                            <span>Padding Ratio</span>
+                            <input name="padding_ratio" type="number" value="{{ config.padding_ratio }}" min="0" max="0.5" step="0.01">
+                        </label>
+                        <label>
+                            <span>Target Label</span>
+                            <input name="target_label" type="text" placeholder="Opsional, mis. single_finger">
+                        </label>
+                        <label>
+                            <span>Reference Width (mm)</span>
+                            <input name="reference_width_mm" type="number" min="0" step="0.01" placeholder="Opsional">
+                        </label>
+                        <label>
+                            <span>Reference Height (mm)</span>
+                            <input name="reference_height_mm" type="number" min="0" step="0.01" placeholder="Opsional">
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button id="submit-button" class="primary-button" type="submit">Proses Scan</button>
+                        <p id="status-banner" class="status-banner" aria-live="polite">Siap menerima gambar untuk diproses.</p>
+                    </div>
+                </form>
+            </section>
+
+            <section class="panel summary-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="section-kicker">Summary</p>
+                        <h2>Ringkasan Hasil</h2>
+                    </div>
+                    <p class="section-text">Statistik utama hasil scan akan muncul di sini setelah inference selesai.</p>
+                </div>
+
+                <div class="summary-grid">
+                    <article class="summary-card">
+                        <span class="summary-label">Status</span>
+                        <strong id="summary-status">Belum ada proses</strong>
+                    </article>
+                    <article class="summary-card">
+                        <span class="summary-label">Detections</span>
+                        <strong id="summary-detections">0</strong>
+                    </article>
+                    <article class="summary-card">
+                        <span class="summary-label">Target</span>
+                        <strong id="summary-target">-</strong>
+                    </article>
+                    <article class="summary-card">
+                        <span class="summary-label">Quality</span>
+                        <strong id="summary-quality">-</strong>
+                    </article>
+                </div>
+
+                <div class="quality-meter">
+                    <div class="quality-meter-bar" id="quality-meter-bar"></div>
+                </div>
+
+                <div class="measurement-grid" id="measurement-grid">
+                    <div class="measurement-empty">Measurement akan tampil di sini jika reference size diberikan atau target berhasil dihitung.</div>
+                </div>
+            </section>
+
+            <section class="results-grid">
+                <article class="panel image-card" data-slot="original">
+                    <div class="image-card-header">
+                        <p class="section-kicker">View 01</p>
+                        <h3>Original Input</h3>
+                    </div>
+                    <img id="image-original" alt="Original input preview">
+                </article>
+                <article class="panel image-card" data-slot="annotated">
+                    <div class="image-card-header">
+                        <p class="section-kicker">View 02</p>
+                        <h3>Annotated Detection</h3>
+                    </div>
+                    <img id="image-annotated" alt="Annotated detection preview">
+                </article>
+                <article class="panel image-card" data-slot="crop">
+                    <div class="image-card-header">
+                        <p class="section-kicker">View 03</p>
+                        <h3>Target Crop</h3>
+                    </div>
+                    <img id="image-crop" alt="Target crop preview">
+                </article>
+                <article class="panel image-card" data-slot="flattened">
+                    <div class="image-card-header">
+                        <p class="section-kicker">View 04</p>
+                        <h3>Flattened Surface</h3>
+                    </div>
+                    <img id="image-flattened" alt="Flattened surface preview">
+                </article>
+                <article class="panel image-card" data-slot="enhanced">
+                    <div class="image-card-header">
+                        <p class="section-kicker">View 05</p>
+                        <h3>Enhanced Output</h3>
+                    </div>
+                    <img id="image-enhanced" alt="Enhanced output preview">
+                </article>
+            </section>
+
+            <section class="panel metadata-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="section-kicker">Metadata</p>
+                        <h2>Deteksi dan JSON Output</h2>
+                    </div>
+                    <p class="section-text">Frontend menampilkan tabel deteksi dan payload JSON agar lebih mudah divalidasi saat development.</p>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Label</th>
+                                <th>Conf</th>
+                                <th>Class</th>
+                                <th>BBox</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detections-body">
+                            <tr>
+                                <td colspan="4" class="table-empty">Belum ada hasil deteksi.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <pre id="metadata-json" class="metadata-json">{
+  "message": "Hasil scan akan muncul di sini."
+}</pre>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        window.APP_CONFIG = {{ config|tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>
