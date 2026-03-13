@@ -22,6 +22,12 @@ const imageEls = {
     flattened: document.getElementById("image-flattened"),
     enhanced: document.getElementById("image-enhanced"),
 };
+const heroEls = {
+    weights: document.getElementById("hero-weights"),
+    imgsz: document.getElementById("hero-imgsz"),
+    conf: document.getElementById("hero-conf"),
+};
+let apiBase = null;
 
 function setStatus(message, tone = "") {
     statusBanner.textContent = message;
@@ -123,8 +129,79 @@ function resetResults() {
     metadataJson.textContent = JSON.stringify({ message: "Hasil scan akan muncul di sini." }, null, 2);
 }
 
+function buildBackendCandidates() {
+    const candidates = [];
+    if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+        candidates.push(window.location.origin);
+    }
+    candidates.push("http://127.0.0.1:5000", "http://localhost:5000");
+    return [...new Set(candidates)];
+}
+
+async function readJsonResponse(response) {
+    const raw = await response.text();
+    if (!raw.trim()) {
+        throw new Error("Respons dari backend kosong. Pastikan server Flask berjalan di http://127.0.0.1:5000.");
+    }
+
+    try {
+        return JSON.parse(raw);
+    } catch {
+        if (!response.ok) {
+            throw new Error(`Backend mengembalikan respons non-JSON (status ${response.status}). Pastikan frontend terhubung ke Flask app.`);
+        }
+        throw new Error("Backend mengembalikan format yang tidak bisa dibaca. Pastikan endpoint /scan berasal dari Flask app ini.");
+    }
+}
+
+async function detectBackend(showStatus = false) {
+    const candidates = buildBackendCandidates();
+
+    for (const candidate of candidates) {
+        try {
+            const response = await fetch(`${candidate}/health`, {
+                method: "GET",
+                mode: "cors",
+                cache: "no-store",
+            });
+            const data = await readJsonResponse(response);
+            if (response.ok && data?.status === "ok") {
+                apiBase = candidate;
+                if (showStatus) {
+                    const suffix = candidate === window.location.origin ? "Backend aktif dan siap dipakai." : `Backend aktif di ${candidate}.`;
+                    setStatus(suffix, "success");
+                }
+                return candidate;
+            }
+        } catch {
+            continue;
+        }
+    }
+
+    apiBase = null;
+    if (showStatus) {
+        setStatus("Backend tidak terdeteksi. Jalankan `python -m webapp.app` lalu buka http://127.0.0.1:5000.", "error");
+    }
+    return null;
+}
+
+function syncHeroStats() {
+    const weights = form.elements.namedItem("weights")?.value || "yolov8n.pt";
+    const imgsz = form.elements.namedItem("imgsz")?.value || "640";
+    const conf = form.elements.namedItem("conf")?.value || "0.25";
+
+    heroEls.weights.textContent = weights;
+    heroEls.imgsz.textContent = `${imgsz} px`;
+    heroEls.conf.textContent = conf;
+}
+
 fileInput.addEventListener("change", () => {
     updateFileLabel(fileInput.files?.[0]);
+});
+
+["weights", "imgsz", "conf"].forEach((fieldName) => {
+    const element = form.elements.namedItem(fieldName);
+    element?.addEventListener("input", syncHeroStats);
 });
 
 const uploadZone = document.querySelector(".upload-zone");
@@ -161,16 +238,25 @@ form.addEventListener("submit", async (event) => {
         return;
     }
 
+    if (!apiBase) {
+        await detectBackend(false);
+    }
+    if (!apiBase) {
+        setStatus("Backend tidak terdeteksi. Jalankan `python -m webapp.app` lalu buka http://127.0.0.1:5000.", "error");
+        return;
+    }
+
     submitButton.disabled = true;
     setStatus("Model sedang memproses gambar, tunggu sebentar...", "");
 
     try {
         const payload = new FormData(form);
-        const response = await fetch("/scan", {
+        const response = await fetch(`${apiBase}/scan`, {
             method: "POST",
+            mode: "cors",
             body: payload,
         });
-        const data = await response.json();
+        const data = await readJsonResponse(response);
 
         if (!response.ok) {
             throw new Error(data.error || "Terjadi kesalahan saat memproses gambar.");
@@ -191,3 +277,5 @@ form.addEventListener("submit", async (event) => {
 });
 
 resetResults();
+syncHeroStats();
+detectBackend(true);

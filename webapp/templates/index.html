@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="../static/styles.css">
 </head>
 <body>
     <div class="page-shell">
@@ -23,15 +23,15 @@
             <div class="hero-panel">
                 <div class="hero-stat">
                     <span>Model default</span>
-                    <strong>{{ config.weights }}</strong>
+                    <strong id="hero-weights">yolov8n.pt</strong>
                 </div>
                 <div class="hero-stat">
                     <span>Inference size</span>
-                    <strong>{{ config.imgsz }} px</strong>
+                    <strong id="hero-imgsz">640 px</strong>
                 </div>
                 <div class="hero-stat">
                     <span>Confidence</span>
-                    <strong>{{ config.conf }}</strong>
+                    <strong id="hero-conf">0.25</strong>
                 </div>
                 <div class="hero-note">
                     Frontend ini cocok untuk demo lokal, validasi hasil model, dan presentasi output tanpa buka folder hasil manual.
@@ -59,26 +59,26 @@
                     <div class="field-grid">
                         <label>
                             <span>Weights</span>
-                            <input name="weights" type="text" value="{{ config.weights }}" placeholder="yolov8n.pt">
+                            <input name="weights" type="text" value="yolov8n.pt" placeholder="yolov8n.pt">
                         </label>
                         <label>
                             <span>Device</span>
                             <select name="device">
-                                <option value="cpu" {% if config.device == "cpu" %}selected{% endif %}>CPU</option>
+                                <option value="cpu" selected>CPU</option>
                                 <option value="cuda">CUDA</option>
                             </select>
                         </label>
                         <label>
                             <span>Confidence</span>
-                            <input name="conf" type="number" value="{{ config.conf }}" min="0.01" max="0.99" step="0.01">
+                            <input name="conf" type="number" value="0.25" min="0.01" max="0.99" step="0.01">
                         </label>
                         <label>
                             <span>Image Size</span>
-                            <input name="imgsz" type="number" value="{{ config.imgsz }}" min="128" max="1280" step="32">
+                            <input name="imgsz" type="number" value="640" min="128" max="1280" step="32">
                         </label>
                         <label>
                             <span>Padding Ratio</span>
-                            <input name="padding_ratio" type="number" value="{{ config.padding_ratio }}" min="0" max="0.5" step="0.01">
+                            <input name="padding_ratio" type="number" value="0.12" min="0" max="0.5" step="0.01">
                         </label>
                         <label>
                             <span>Target Label</span>
@@ -210,9 +210,6 @@
         </main>
     </div>
 
-    <script>
-        window.APP_CONFIG = {{ config|tojson }};
-    </script>
-    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+    <script src="../static/app.js" defer></script>
 </body>
 </html>

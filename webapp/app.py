@@ -74,6 +74,13 @@ def create_app() -> Flask:
         "padding_ratio": 0.12,
     }
 
+    @app.after_request
+    def add_cors_headers(response):
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        return response
+
     @app.get("/")
     def index():
         return render_template("index.html", config=default_config)
@@ -82,8 +89,11 @@ def create_app() -> Flask:
     def health():
         return jsonify({"status": "ok"})
 
-    @app.post("/scan")
+    @app.route("/scan", methods=["POST", "OPTIONS"])
     def scan():
+        if request.method == "OPTIONS":
+            return ("", 204)
+
         uploaded = request.files.get("image")
         if uploaded is None or not uploaded.filename:
             return jsonify({"error": "Pilih file gambar terlebih dahulu."}), 400
@@ -142,6 +152,10 @@ def create_app() -> Flask:
     @app.errorhandler(413)
     def file_too_large(_error):
         return jsonify({"error": "Ukuran file terlalu besar. Maksimal 10 MB."}), 413
+
+    @app.errorhandler(Exception)
+    def unexpected_error(error):
+        return jsonify({"error": f"Server error: {error}"}), 500
 
     return app
 
