@@ -4,10 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Scanner Vision Studio</title>
+    <link rel="icon" type="image/webp" href="{{ url_for('public_file', filename='Icon/icon.webp') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../static/styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="page-shell">
@@ -23,15 +24,15 @@
             <div class="hero-panel">
                 <div class="hero-stat">
                     <span>Model default</span>
-                    <strong id="hero-weights">yolov8n.pt</strong>
+                    <strong id="hero-weights">{{ config.weights }}</strong>
                 </div>
                 <div class="hero-stat">
                     <span>Inference size</span>
-                    <strong id="hero-imgsz">640 px</strong>
+                    <strong id="hero-imgsz">{{ config.imgsz }} px</strong>
                 </div>
                 <div class="hero-stat">
                     <span>Confidence</span>
-                    <strong id="hero-conf">0.25</strong>
+                    <strong id="hero-conf">{{ config.conf }}</strong>
                 </div>
                 <div class="hero-note">
                     Frontend ini cocok untuk demo lokal, validasi hasil model, dan presentasi output tanpa buka folder hasil manual.
@@ -56,29 +57,129 @@
                         <span class="upload-subtitle" id="file-label">Belum ada file yang dipilih</span>
                     </label>
 
+                    <section id="upload-preview" class="upload-preview" hidden>
+                        <div class="upload-preview-header">
+                            <span class="field-subtitle">Preview Gambar</span>
+                            <strong id="preview-file-name">Belum ada file</strong>
+                        </div>
+                        <div class="upload-preview-frame">
+                            <div id="upload-preview-empty" class="upload-preview-empty">
+                                <span class="upload-preview-empty-icon" aria-hidden="true"></span>
+                                <span class="upload-preview-empty-text">Preview gambar akan muncul di sini</span>
+                            </div>
+                            <img id="image-upload-preview" alt="Preview gambar yang dipilih user">
+                        </div>
+                    </section>
+
                     <div class="field-grid">
-                        <label>
-                            <span>Weights</span>
-                            <input name="weights" type="text" value="yolov8n.pt" placeholder="yolov8n.pt">
-                        </label>
-                        <label>
+                        <div class="weights-field field-block">
+                            <div class="weights-header">
+                                <span>Weights</span>
+                                <span class="field-subtitle">Pilih Model</span>
+                            </div>
+                            <div class="weights-picker">
+                                <input
+                                    id="weights-input"
+                                    name="weights"
+                                    type="text"
+                                    value="{{ config.weights }}"
+                                    readonly
+                                    aria-readonly="true"
+                                    autocomplete="off"
+                                >
+                                <div id="weights-preset" class="custom-select" data-placeholder="Pilih preset model">
+                                    <button
+                                        id="weights-preset-toggle"
+                                        class="custom-select__trigger"
+                                        type="button"
+                                        aria-haspopup="listbox"
+                                        aria-expanded="false"
+                                        aria-controls="weights-preset-menu"
+                                    >
+                                        <span id="weights-preset-label" class="custom-select__label">Pilih preset model</span>
+                                        <span class="custom-select__icon" aria-hidden="true"></span>
+                                    </button>
+                                    <div id="weights-preset-menu" class="custom-select__menu" role="listbox" aria-label="Preset model YOLO">
+                                        <div class="custom-select__menu-inner" data-custom-scrollbar="y">
+                                    {% for model in model_presets %}
+                                            <button
+                                                type="button"
+                                                class="custom-select__option {% if model.value == config.weights %}is-selected{% endif %}"
+                                                role="option"
+                                                data-value="{{ model.value }}"
+                                                data-label="{{ model.label }}"
+                                                data-availability="{{ 'Lokal' if model.is_local else 'Auto-download' }}"
+                                                aria-selected="{% if model.value == config.weights %}true{% else %}false{% endif %}"
+                                                style="--option-index: {{ loop.index0 }};"
+                                            >
+                                                <span class="custom-select__option-title">{{ model.label }}</span>
+                                                <span class="custom-select__option-meta">{{ model.value }} • {{ "Lokal" if model.is_local else "Auto-download" }}</span>
+                                            </button>
+                                    {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <small id="weights-note" class="field-help">
+                                Weights mengikuti preset model yang dipilih dan tidak bisa diedit manual.
+                            </small>
+                        </div>
+                        <div class="field-block">
                             <span>Device</span>
-                            <select name="device">
-                                <option value="cpu" selected>CPU</option>
-                                <option value="cuda">CUDA</option>
-                            </select>
-                        </label>
+                            <input id="device-input" name="device" type="hidden" value="{{ config.device }}">
+                            <div id="device-select" class="custom-select" data-placeholder="Pilih device">
+                                <button
+                                    id="device-select-toggle"
+                                    class="custom-select__trigger"
+                                    type="button"
+                                    aria-haspopup="listbox"
+                                    aria-expanded="false"
+                                    aria-controls="device-select-menu"
+                                >
+                                    <span id="device-select-label" class="custom-select__label">{{ config.device|upper }}</span>
+                                    <span class="custom-select__icon" aria-hidden="true"></span>
+                                </button>
+                                <div id="device-select-menu" class="custom-select__menu" role="listbox" aria-label="Pilih device inference">
+                                    <div class="custom-select__menu-inner" data-custom-scrollbar="y">
+                                        <button
+                                            type="button"
+                                            class="custom-select__option {% if config.device == 'cpu' %}is-selected{% endif %}"
+                                            role="option"
+                                            data-value="cpu"
+                                            data-label="CPU"
+                                            aria-selected="{% if config.device == 'cpu' %}true{% else %}false{% endif %}"
+                                            style="--option-index: 0;"
+                                        >
+                                            <span class="custom-select__option-title">CPU</span>
+                                            <span class="custom-select__option-meta">Inference berjalan di processor lokal.</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="custom-select__option {% if config.device == 'cuda' %}is-selected{% endif %}"
+                                            role="option"
+                                            data-value="cuda"
+                                            data-label="CUDA"
+                                            aria-selected="{% if config.device == 'cuda' %}true{% else %}false{% endif %}"
+                                            style="--option-index: 1;"
+                                        >
+                                            <span class="custom-select__option-title">CUDA</span>
+                                            <span class="custom-select__option-meta">Inference memakai GPU jika environment Torch mendukung.</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <label>
                             <span>Confidence</span>
-                            <input name="conf" type="number" value="0.25" min="0.01" max="0.99" step="0.01">
+                            <input name="conf" type="number" value="{{ config.conf }}" min="0.01" max="0.99" step="0.01">
                         </label>
                         <label>
                             <span>Image Size</span>
-                            <input name="imgsz" type="number" value="640" min="128" max="1280" step="32">
+                            <input name="imgsz" type="number" value="{{ config.imgsz }}" min="128" max="1280" step="32">
                         </label>
                         <label>
                             <span>Padding Ratio</span>
-                            <input name="padding_ratio" type="number" value="0.12" min="0" max="0.5" step="0.01">
+                            <input name="padding_ratio" type="number" value="{{ config.padding_ratio }}" min="0" max="0.5" step="0.01">
                         </label>
                         <label>
                             <span>Target Label</span>
@@ -185,10 +286,11 @@
                     <p class="section-text">Frontend menampilkan tabel deteksi dan payload JSON agar lebih mudah divalidasi saat development.</p>
                 </div>
 
-                <div class="table-wrap">
+                <div class="table-wrap" data-custom-scrollbar="x">
                     <table>
                         <thead>
                             <tr>
+                                <th class="table-col-no">No.</th>
                                 <th>Label</th>
                                 <th>Conf</th>
                                 <th>Class</th>
@@ -197,19 +299,23 @@
                         </thead>
                         <tbody id="detections-body">
                             <tr>
-                                <td colspan="4" class="table-empty">Belum ada hasil deteksi.</td>
+                                <td colspan="5" class="table-empty">Belum ada hasil deteksi.</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <pre id="metadata-json" class="metadata-json">{
+                <pre id="metadata-json" class="metadata-json" data-custom-scrollbar="both">{
   "message": "Hasil scan akan muncul di sini."
 }</pre>
             </section>
         </main>
     </div>
 
-    <script src="../static/app.js" defer></script>
+    <script>
+        window.SCANNER_DEFAULT_WEIGHTS = {{ config.weights|tojson }};
+        window.SCANNER_MODEL_PRESETS = {{ model_presets|tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </body>
 </html>

@@ -90,6 +90,11 @@ Default repo ini memakai `yolov8n.pt`, tetapi Anda juga bisa memakai hasil train
 runs/train/scanner_sdk/weights/best.pt
 ```
 
+Di web frontend, field `weights` sekarang bisa diketik manual dan juga punya 10 preset model:
+`yolov8n.pt`, `yolov8s.pt`, `yolov8m.pt`, `yolov8l.pt`, `yolov8x.pt`, `yolo11n.pt`, `yolo11s.pt`, `yolo11m.pt`, `yolo11l.pt`, dan `yolo11x.pt`.
+
+Kalau file preset belum ada di folder project, Ultralytics akan mencoba menyiapkannya saat pertama kali model itu dipakai. Jika ingin full offline, Anda tetap bisa isi path `.pt` sendiri.
+
 ### 3. 🌐 Jalankan lewat frontend web
 
 ```bash
@@ -148,7 +153,7 @@ Web UI akan menampilkan:
 | Field | Fungsi |
 | --- | --- |
 | `image` | File gambar input |
-| `weights` | Path weights model |
+| `weights` | Nama atau path weights model; bisa diketik manual atau dipilih dari preset model YOLO |
 | `device` | `cpu` atau `cuda` |
 | `conf` | Confidence threshold |
 | `imgsz` | Ukuran input inference |
