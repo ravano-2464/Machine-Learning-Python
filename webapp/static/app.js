@@ -120,6 +120,7 @@ function initializeCustomScrollbar(target) {
     const axis = target.dataset.customScrollbar || "y";
     const hasVertical = axis === "y" || axis === "both";
     const hasHorizontal = axis === "x" || axis === "both";
+    const isPageScrollArea = target.classList.contains("page-scroll-area");
     const parent = target.parentNode;
     if (!parent) {
         return;
@@ -132,6 +133,9 @@ function initializeCustomScrollbar(target) {
     }
     if (hasHorizontal) {
         shell.classList.add("has-axis-x");
+    }
+    if (isPageScrollArea) {
+        shell.classList.add("custom-scroll-shell--page");
     }
     parent.insertBefore(shell, target);
     shell.appendChild(target);
@@ -150,6 +154,63 @@ function initializeCustomScrollbar(target) {
     let startScrollLeft = 0;
     let verticalThumbSize = 0;
     let horizontalThumbSize = 0;
+    const handlePageScrollKeys = (event) => {
+        if (!isPageScrollArea || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
+            return;
+        }
+
+        const activeElement = document.activeElement;
+        const isInteractiveElement = activeElement
+            && activeElement !== document.body
+            && activeElement !== document.documentElement
+            && activeElement !== target
+            && (
+                activeElement.isContentEditable
+                || Boolean(activeElement.closest("input, textarea, select, button, a[href], summary, [role='button'], [role='link'], [contenteditable='true']"))
+            );
+        if (isInteractiveElement) {
+            return;
+        }
+
+        const currentScrollTop = target.scrollTop;
+        const pageJump = Math.max(40, target.clientHeight * 0.9);
+        let nextScrollTop = null;
+
+        switch (event.key) {
+            case "ArrowDown":
+                nextScrollTop = currentScrollTop + 40;
+                break;
+            case "ArrowUp":
+                nextScrollTop = currentScrollTop - 40;
+                break;
+            case "PageDown":
+                nextScrollTop = currentScrollTop + pageJump;
+                break;
+            case "PageUp":
+                nextScrollTop = currentScrollTop - pageJump;
+                break;
+            case "Home":
+                nextScrollTop = 0;
+                break;
+            case "End":
+                nextScrollTop = target.scrollHeight;
+                break;
+            case " ":
+                nextScrollTop = currentScrollTop + (event.shiftKey ? -pageJump : pageJump);
+                break;
+            default:
+                break;
+        }
+
+        if (nextScrollTop === null) {
+            return;
+        }
+
+        event.preventDefault();
+        target.scrollTop = clampNumber(nextScrollTop, 0, Math.max(0, target.scrollHeight - target.clientHeight));
+        update();
+        showActivity();
+    };
 
     if (hasVertical) {
         verticalTrack = document.createElement("div");
@@ -348,6 +409,9 @@ function initializeCustomScrollbar(target) {
     mutationObserver?.observe(target, { childList: true, subtree: true, characterData: true });
 
     window.addEventListener("resize", update);
+    if (isPageScrollArea) {
+        window.addEventListener("keydown", handlePageScrollKeys);
+    }
     window.requestAnimationFrame(update);
 
     customScrollbarControllers.set(target, {
@@ -358,6 +422,9 @@ function initializeCustomScrollbar(target) {
             resizeObserver?.disconnect();
             mutationObserver?.disconnect();
             window.removeEventListener("resize", update);
+            if (isPageScrollArea) {
+                window.removeEventListener("keydown", handlePageScrollKeys);
+            }
             customScrollbarControllers.delete(target);
         },
     });
