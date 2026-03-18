@@ -528,6 +528,7 @@ select option {
 
 .custom-select__menu-inner {
     display: grid;
+    gap: 8px;
     max-height: 280px;
     padding: 8px;
     overflow-y: auto;
