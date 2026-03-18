@@ -140,6 +140,20 @@ body::after {
     line-height: 1.6;
 }
 
+.table-empty {
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.table-empty__content {
+    display: grid;
+    min-height: 140px;
+    place-items: center;
+    padding: 28px 24px;
+    text-wrap: balance;
+}
+
 .hero-text {
     max-width: 64ch;
     margin-top: 18px;

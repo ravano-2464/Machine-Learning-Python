@@ -458,7 +458,13 @@ function renderMeasurements(measurements) {
 
 function renderDetections(detections) {
     if (!detections || !detections.length) {
-        detectionsBody.innerHTML = '<tr><td colspan="4" class="table-empty">Tidak ada objek yang terdeteksi.</td></tr>';
+        detectionsBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="table-empty">
+                    <div class="table-empty__content">Tidak ada objek yang terdeteksi.</div>
+                </td>
+            </tr>
+        `;
         return;
     }
 
