@@ -24,6 +24,11 @@ const deviceSelectLabel = document.getElementById("device-select-label");
 const deviceSelectMenu = document.getElementById("device-select-menu");
 const deviceSelectOptions = Array.from(deviceSelect?.querySelectorAll(".custom-select__option") || []);
 const weightsNote = document.getElementById("weights-note");
+const themeToggle = document.getElementById("theme-toggle");
+const themeToggleState = document.getElementById("theme-toggle-state");
+const root = document.documentElement;
+const themeStorageKey = "scanner-theme";
+const themeMediaQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 
 const summaryEls = {
     status: document.getElementById("summary-status"),
@@ -56,6 +61,86 @@ const modelPresetLookup = new Map(
         .filter((item) => item?.value)
         .map((item) => [String(item.value).trim(), item])
 );
+
+function getStoredTheme() {
+    try {
+        const storedTheme = window.localStorage.getItem(themeStorageKey);
+        return storedTheme === "light" || storedTheme === "dark" ? storedTheme : null;
+    } catch {
+        return null;
+    }
+}
+
+function persistTheme(theme) {
+    try {
+        window.localStorage.setItem(themeStorageKey, theme);
+    } catch {
+        // Ignore storage failures and keep the theme for the current session only.
+    }
+}
+
+function getSystemTheme() {
+    if (!themeMediaQuery) {
+        return root.dataset.theme === "light" ? "light" : "dark";
+    }
+    return themeMediaQuery.matches ? "dark" : "light";
+}
+
+function getCurrentTheme() {
+    return root.dataset.theme === "light" ? "light" : "dark";
+}
+
+function syncThemeToggle() {
+    const currentTheme = getCurrentTheme();
+    const currentThemeLabel = currentTheme === "dark" ? "Mode gelap" : "Mode terang";
+    const nextThemeLabel = currentTheme === "dark" ? "mode terang" : "mode gelap";
+
+    if (themeToggleState) {
+        themeToggleState.textContent = currentThemeLabel;
+    }
+
+    themeToggle?.setAttribute("aria-pressed", String(currentTheme === "dark"));
+    themeToggle?.setAttribute("aria-label", `Ganti ke ${nextThemeLabel}`);
+    themeToggle?.setAttribute("title", `Ganti ke ${nextThemeLabel}`);
+}
+
+function applyTheme(theme) {
+    const normalizedTheme = theme === "light" ? "light" : "dark";
+    root.dataset.theme = normalizedTheme;
+    root.style.colorScheme = normalizedTheme;
+    syncThemeToggle();
+}
+
+function initializeThemeToggle() {
+    applyTheme(getStoredTheme() || getSystemTheme());
+
+    themeToggle?.addEventListener("click", () => {
+        const nextTheme = getCurrentTheme() === "dark" ? "light" : "dark";
+        applyTheme(nextTheme);
+        persistTheme(nextTheme);
+        window.requestAnimationFrame(refreshCustomScrollbars);
+    });
+
+    if (!themeMediaQuery) {
+        return;
+    }
+
+    const handleThemePreferenceChange = (event) => {
+        if (getStoredTheme()) {
+            return;
+        }
+        applyTheme(event.matches ? "dark" : "light");
+    };
+
+    if (typeof themeMediaQuery.addEventListener === "function") {
+        themeMediaQuery.addEventListener("change", handleThemePreferenceChange);
+        return;
+    }
+
+    if (typeof themeMediaQuery.addListener === "function") {
+        themeMediaQuery.addListener(handleThemePreferenceChange);
+    }
+}
 
 function setStatus(message, tone = "") {
     statusBanner.textContent = message;
@@ -965,6 +1050,7 @@ form.addEventListener("submit", async (event) => {
     }
 });
 
+initializeThemeToggle();
 initializeCustomScrollbars();
 resetResults();
 updateUploadPreview(fileInput.files?.[0]);

@@ -3,16 +3,54 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
     <title>Scanner Vision Studio</title>
     <link rel="icon" type="image/webp" href="{{ url_for('public_file', filename='Icon/icon.webp') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+        (function () {
+            const storageKey = "scanner-theme";
+            let theme = "dark";
+
+            try {
+                const storedTheme = window.localStorage.getItem(storageKey);
+                if (storedTheme === "light" || storedTheme === "dark") {
+                    theme = storedTheme;
+                } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+                    theme = "light";
+                }
+            } catch (_error) {
+                if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+                    theme = "light";
+                }
+            }
+
+            document.documentElement.dataset.theme = theme;
+            document.documentElement.style.colorScheme = theme;
+        })();
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="page-scroll-area" data-custom-scrollbar="y">
         <div class="page-shell">
+        <div class="page-toolbar">
+            <button
+                id="theme-toggle"
+                class="theme-toggle"
+                type="button"
+                aria-label="Ganti mode tema"
+                aria-pressed="false"
+                title="Ganti mode tema"
+            >
+                <span class="theme-toggle__track" aria-hidden="true">
+                    <span class="theme-toggle__thumb"></span>
+                </span>
+                <span id="theme-toggle-state" class="theme-toggle__state">Tema</span>
+            </button>
+        </div>
         <header class="hero">
             <div class="hero-copy">
                 <p class="eyebrow">Touchless Scanner Interface</p>
