@@ -1,46 +1,52 @@
 # 🚀 Touchless Object Detector SDK
 
-Python SDK untuk workflow object detection bergaya scanner, lengkap dengan web frontend untuk upload gambar dan melihat hasil `annotated`, `crop`, `flattened`, `enhanced`, serta metadata scan langsung di browser.
+Python SDK for a touchless scanner-style object detection workflow, bundled with a local Flask web interface for uploading images and previewing `annotated`, `crop`, `flattened`, `enhanced`, and metadata outputs directly in the browser.
 
 <div align="center">
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/Ultralytics-YOLOv8-0F172A?style=for-the-badge&labelColor=1E293B" alt="YOLOv8">
+  <img src="https://img.shields.io/badge/Ultralytics-YOLOv8%20%2F%20YOLO11-0F172A?style=for-the-badge&labelColor=1E293B" alt="Ultralytics YOLO">
   <img src="https://img.shields.io/badge/OpenCV-Scanner%20Pipeline-0EA5E9?style=for-the-badge&labelColor=0369A1" alt="OpenCV">
-  <img src="https://img.shields.io/badge/PyTorch-Custom%20Training-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" alt="PyTorch">
+  <img src="https://img.shields.io/badge/Flask-Local%20Web%20UI-111827?style=for-the-badge&logo=flask&logoColor=white" alt="Flask">
 </div>
 
 ## 📖 Overview
 
-Project ini berfokus pada alur yang lebih dekat ke aplikasi scanner touchless:
+This repository is built for workflows that feel closer to a touchless scanning app than a plain detection demo. The pipeline can:
 
-- deteksi objek target dengan YOLOv8
-- pilih target utama berdasarkan confidence
-- crop area target dengan padding opsional
-- flatten perspective agar permukaan lebih rapi
-- enhance image untuk hasil yang lebih siap dipakai downstream
-- hitung quality score dan measurement sederhana
-- tampilkan output lewat CLI atau frontend web
+- detect objects with Ultralytics YOLO
+- select the highest-confidence result or a specific target label
+- crop the detected area with optional padding
+- rectify perspective to create a flatter surface view
+- enhance the image for downstream usage
+- compute a simple quality score and pixel-based measurements
+- preview everything through CLI output or a browser-based interface
 
-Repo ini cocok untuk:
+This project is a good fit for:
 
-- prototyping alur deteksi + preprocessing gambar
-- validasi hasil model custom
-- demo lokal ke user atau stakeholder tanpa buka folder output manual
-- dasar integrasi ke API atau aplikasi kamera
+- rapid prototyping of detection + preprocessing pipelines
+- validating custom YOLO weights locally
+- showing scan outputs to teammates without browsing output folders manually
+- building a starting point for future API or camera integrations
 
 ## ✨ Features
 
-| Area | Keterangan |
+| Area | Description |
 | --- | --- |
-| Detection SDK | Load model, jalankan inference, dan ubah hasil ke format Python dict |
-| Scanner Pipeline | Crop, perspective rectification, enhancement, quality scoring |
-| Measurements | Hitung lebar/tinggi pixel dan estimasi pixel per mm |
-| CLI Demo | Jalankan scan dari terminal dan export file hasil |
-| Web Frontend | Upload gambar via browser dan lihat semua output scan |
-| Training | Train model custom berbasis Ultralytics YOLO |
-| Export | Export weights `.pt` ke `onnx`, `tflite`, atau `coreml` |
+| Detection SDK | Load a YOLO model, run inference, and convert detections into Python-friendly structures |
+| Scanner Pipeline | Crop, perspective rectification, enhancement, and quality scoring |
+| Measurements | Estimate width/height in pixels and optional pixels-per-mm values |
+| CLI Demo | Run a full scan from the terminal and export processed images plus metadata |
+| Web Frontend | Upload images in the browser and inspect every generated output visually |
+| Training | Train custom models with Ultralytics YOLO |
+| Export | Export `.pt` weights to `onnx`, `tflite`, or `coreml` |
 
-Install dependency:
+## 🧰 Requirements
+
+- Python 3.10+
+- pip
+- A valid YOLO `.pt` model file or one of the built-in Ultralytics preset models
+
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -49,122 +55,126 @@ pip install -r requirements.txt
 ## 📁 Project Structure
 
 ```text
-Machine Learning/
-|-- configs/
-|   `-- biometric_data.example.yaml
-|-- examples/
-|   `-- demo.py
-|-- sdk/
-|   |-- __init__.py
-|   |-- detector.py
-|   |-- image_ops.py
-|   `-- types.py
-|-- webapp/
-|   |-- __init__.py
-|   |-- app.py
-|   |-- static/
-|   |   |-- app.js
-|   |   `-- styles.css
-|   `-- templates/
-|       `-- index.html
-|-- export_model.py
-|-- train.py
-|-- requirements.txt
-|-- README.md
-`-- yolov8n.pt
+📦 Touchless Object Detector SDK
+├── 📁 configs/                            # Example dataset configuration files for training
+│   └── 📄 biometric_data.example.yaml     # Sample Ultralytics dataset YAML for biometric-style data
+├── 📁 examples/                           # Example scripts and optional runtime input/output folders
+│   └── 📄 demo.py                         # CLI demo that runs a scan and exports processed results
+├── 📁 public/                             # Public assets served by the Flask frontend
+│   └── 📁 Icon/                           # Browser icon assets
+│       └── 🖼️ icon.webp                  # Favicon used by the web interface
+├── 📁 sdk/                                # Core SDK package for detection and image processing
+│   ├── 📄 __init__.py                     # Package entry point for SDK imports
+│   ├── 📄 detector.py                     # ObjectDetectorSDK: inference, target selection, scan pipeline, and export helpers
+│   ├── 📄 image_ops.py                    # Image loading, cropping, rectification, enhancement, annotation, and quality scoring
+│   └── 📄 types.py                        # Shared dataclasses and type definitions for detections and scan results
+├── 📁 webapp/                             # Flask-based web application and API endpoints
+│   ├── 📄 __init__.py                     # Marks the frontend folder as a Python package
+│   ├── 📄 app.py                          # Flask app factory, `/scan` endpoint, `/health` check, and model preset handling
+│   ├── 📁 static/                         # Frontend JavaScript and CSS assets
+│   │   ├── 📄 app.js                      # Upload flow, form interactions, API calls, and client-side result rendering
+│   │   └── 🎨 styles.css                  # Layout, theme, animations, and custom scrollbar styling
+│   └── 📁 templates/                      # HTML templates rendered by Flask
+│       └── 📄 index.html                  # Main browser dashboard for uploads, controls, previews, and metadata
+├── 📄 export_model.py                     # CLI script for exporting YOLO weights to ONNX, TFLite, or CoreML
+├── 📄 train.py                            # CLI script for training Ultralytics YOLO models
+├── ⚙️ requirements.txt                   # Python dependencies for the SDK, scripts, and web app
+└── 📝 README.md                           # Project documentation
 ```
 
 ## ⚡ Quick Start
 
-### 1. 📦 Install dependency
+### 1. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. 🤖 Siapkan model weights
+### 2. Prepare model weights
 
-Default repo ini memakai `yolov8n.pt`, tetapi Anda juga bisa memakai hasil training sendiri, misalnya:
+The default setup uses `yolov8n.pt`.
+
+- In the web app, you can choose from preset YOLOv8 and YOLO11 models.
+- If a selected preset is not available locally, Ultralytics will download it on first use.
+- In CLI scripts or Python code, you can also point to your own local `.pt` file.
+
+Example custom weight path:
 
 ```text
 runs/train/scanner_sdk/weights/best.pt
 ```
 
-Di web frontend, field `weights` sekarang bisa diketik manual dan juga punya 10 preset model:
-`yolov8n.pt`, `yolov8s.pt`, `yolov8m.pt`, `yolov8l.pt`, `yolov8x.pt`, `yolo11n.pt`, `yolo11s.pt`, `yolo11m.pt`, `yolo11l.pt`, dan `yolo11x.pt`.
-
-Kalau file preset belum ada di folder project, Ultralytics akan mencoba menyiapkannya saat pertama kali model itu dipakai. Jika ingin full offline, Anda tetap bisa isi path `.pt` sendiri.
-
-### 3. 🌐 Jalankan lewat frontend web
+### 3. Run the web frontend
 
 ```bash
 python -m webapp.app
 ```
 
-Setelah server aktif, buka:
+Then open:
 
 ```text
 http://127.0.0.1:5000
 ```
 
-Yang bisa dilakukan dari frontend:
+From the browser UI, you can:
 
-- upload gambar melalui browser
-- atur `weights`, `device`, `confidence`, `image size`, dan `padding ratio`
-- isi `target label` jika hanya ingin label tertentu
-- isi `reference width/height` untuk menghitung estimasi pixel per mm
-- lihat output visual dan metadata langsung di halaman
+- upload an image
+- choose model preset, device, confidence, image size, and padding ratio
+- optionally filter by `target_label`
+- optionally provide reference width/height in millimeters
+- inspect visual outputs and JSON metadata on a single page
 
-### 4. 💻 Jalankan lewat CLI
+### 4. Run the CLI demo
 
 ```bash
 python examples/demo.py --image path/to/input.jpg --out-dir examples/output --weights yolov8n.pt
 ```
 
-Jika Anda menjalankan tanpa `--image`, script akan mencoba mengambil gambar pertama dari folder `examples/input/`.
+If `--image` is omitted, the script tries to use the first supported image inside `examples/input/`.
 
-## 🎨 Web Frontend
+## 🌐 Web Frontend
 
-Frontend ada di folder `webapp/` dan memakai Flask sebagai backend ringan.
+The frontend lives in `webapp/` and uses Flask as a lightweight local server.
 
-### 🖼️ Tampilan hasil di browser
+### Browser outputs
 
-Web UI akan menampilkan:
+The UI displays:
 
 - original input
 - annotated detection
-- crop target
+- target crop
 - flattened surface
 - enhanced output
-- tabel deteksi
-- JSON metadata hasil scan
-- measurement cards dan quality meter
+- detection table
+- JSON scan metadata
+- measurement cards and quality meter
 
-### 🔌 Endpoint utama
+### Main endpoints
 
-| Endpoint | Method | Fungsi |
+| Endpoint | Method | Purpose |
 | --- | --- | --- |
-| `/` | `GET` | Render halaman frontend |
-| `/scan` | `POST` | Jalankan inference dan mengembalikan JSON hasil scan |
-| `/health` | `GET` | Health check sederhana |
+| `/` | `GET` | Render the frontend page |
+| `/scan` | `POST` | Run inference and return the scan payload as JSON |
+| `/health` | `GET` | Simple health check |
+| `/public/<path>` | `GET` | Serve public frontend assets |
 
-### 🧾 Parameter form frontend
+### Frontend form fields
 
-| Field | Fungsi |
+| Field | Purpose |
 | --- | --- |
-| `image` | File gambar input |
-| `weights` | Nama atau path weights model; bisa diketik manual atau dipilih dari preset model YOLO |
-| `device` | `cpu` atau `cuda` |
+| `image` | Input image file |
+| `weights` | Selected preset model value sent to the backend |
+| `device` | `cpu` or `cuda` |
 | `conf` | Confidence threshold |
-| `imgsz` | Ukuran input inference |
-| `padding_ratio` | Padding tambahan saat crop |
-| `target_label` | Filter target berdasarkan label atau class id |
-| `reference_width_mm` | Referensi lebar fisik untuk estimasi pixel/mm |
-| `reference_height_mm` | Referensi tinggi fisik untuk estimasi pixel/mm |
+| `imgsz` | Inference image size |
+| `padding_ratio` | Extra crop padding around the target |
+| `target_label` | Optional label or class ID filter |
+| `reference_width_mm` | Optional physical width reference for pixel/mm estimation |
+| `reference_height_mm` | Optional physical height reference for pixel/mm estimation |
 
-## ⌨️ CLI Usage
+## ⌨️ SDK and CLI Usage
 
-Contoh pemakaian SDK di Python:
+### Python SDK example
 
 ```python
 from sdk.detector import ObjectDetectorSDK
@@ -181,13 +191,15 @@ result = sdk.scan(
 print(result.to_dict())
 ```
 
-Contoh CLI lengkap:
+### CLI example
 
 ```bash
 python examples/demo.py --image path/to/input.jpg --out-dir examples/output --weights yolov8n.pt --device cpu --conf 0.25 --imgsz 640
 ```
 
-Output file CLI:
+### CLI export files
+
+The demo generates files such as:
 
 - `annotated.jpg`
 - `scan_crop.jpg`
@@ -195,52 +207,64 @@ Output file CLI:
 - `scan_enhanced.jpg`
 - `scan_metadata.json`
 
-## 🏋️ Training Model
+## 🏋️ Training a Model
 
-Template dataset ada di:
+Dataset template:
 
-`configs/biometric_data.example.yaml`
+```text
+configs/biometric_data.example.yaml
+```
 
-Contoh training:
+Example training command:
 
 ```bash
 python train.py --data configs/biometric_data.example.yaml --model yolov8n.pt --epochs 50 --batch 16 --imgsz 640 --device cpu
 ```
 
-Argumen penting:
+Important arguments:
 
-| Argument | Fungsi |
+| Argument | Purpose |
 | --- | --- |
-| `--data` | File dataset YAML |
-| `--model` | Backbone atau weight awal |
-| `--epochs` | Jumlah epoch training |
+| `--data` | Dataset YAML file |
+| `--model` | Backbone or starting weights |
+| `--epochs` | Number of training epochs |
 | `--batch` | Batch size |
-| `--imgsz` | Ukuran input training |
-| `--device` | Device training |
-| `--project` | Folder output training |
-| `--name` | Nama eksperimen |
+| `--imgsz` | Training image size |
+| `--device` | Training device |
+| `--project` | Training output directory |
+| `--name` | Experiment name |
+| `--patience` | Early stopping patience |
+| `--workers` | Data loader worker count |
+| `--pretrained` / `--no-pretrained` | Enable or disable pretrained initialization |
+| `--single-cls` | Train as a single-class task |
 
-## 📤 Export Model
+## 📤 Export a Model
 
-Contoh export ke ONNX:
+Example ONNX export:
 
 ```bash
 python export_model.py --weights runs/train/scanner_sdk/weights/best.pt --format onnx --imgsz 640 --device cpu
 ```
 
-Format export yang didukung:
+Supported export formats:
 
 - `onnx`
 - `tflite`
 - `coreml`
 
+Optional export flags:
+
+- `--half`
+- `--nms`
+- `--simplify`
+
 ## 🔁 Typical Workflow
 
 ```text
-Collect dataset -> Label dataset -> Train detector -> Run scan pipeline -> Review output in frontend -> Export model -> Integrate to app
+Collect dataset -> Label data -> Train detector -> Run scan pipeline -> Review outputs in the web UI -> Export model -> Integrate into your app
 ```
 
-Contoh alur ringkas:
+Example flow:
 
 ```bash
 python train.py --data configs/biometric_data.example.yaml --model yolov8n.pt --epochs 50
@@ -250,7 +274,7 @@ python export_model.py --weights runs/train/scanner_sdk/weights/best.pt --format
 
 ## 🧠 Output Schema
 
-`ScanResult.to_dict()` mengembalikan struktur ringkas seperti berikut:
+`ScanResult.to_dict()` returns a compact structure like this:
 
 ```json
 {
@@ -265,24 +289,24 @@ python export_model.py --weights runs/train/scanner_sdk/weights/best.pt --format
 }
 ```
 
-Frontend akan membungkus hasil tersebut dengan `summary`, `images`, dan `detections` agar mudah dirender di browser.
+The web frontend wraps that result with additional `summary`, `images`, `measurements`, and `runtime` data to make browser rendering easier.
 
 ## 📝 Notes
 
-- Akurasi model tetap bergantung pada dataset dan training Anda
-- Frontend ini dirancang untuk demo lokal dan validasi hasil, belum untuk deployment production
-- Jika memakai `cuda`, pastikan environment Torch Anda memang mendukung GPU
-- Default maksimal ukuran upload di web app adalah 10 MB per gambar
+- Model quality still depends on your dataset and training process.
+- The web frontend is designed for local demos and validation, not production deployment.
+- If you want to use `cuda`, make sure your Torch environment actually supports GPU inference.
+- The Flask app currently limits uploads to 10 MB per image.
 
 ## 🩹 Troubleshooting
 
-### ❌ Model tidak ditemukan
+### Model weights not found
 
-Pastikan nilai `weights` mengarah ke file `.pt` yang valid, misalnya `yolov8n.pt` atau `runs/train/scanner_sdk/weights/best.pt`.
+Make sure the `weights` value points to a valid `.pt` file, or choose one of the supported preset model names such as `yolov8n.pt` or `yolo11n.pt`.
 
-### 🖼️ Gambar gagal dibaca
+### Unsupported or unreadable image
 
-Gunakan salah satu format yang didukung:
+Use one of the supported formats:
 
 - `.jpg`
 - `.jpeg`
@@ -290,23 +314,23 @@ Gunakan salah satu format yang didukung:
 - `.bmp`
 - `.webp`
 
-### 🌐 Frontend tidak tampil
+### Frontend is not loading correctly
 
-Pastikan server dijalankan dari root project:
+Start the server from the project root:
 
 ```bash
 python -m webapp.app
 ```
 
-Lalu buka `http://127.0.0.1:5000`.
+Then open `http://127.0.0.1:5000`.
 
-## 🌱 Next Improvements
+## 🌱 Possible Next Improvements
 
-- tambahkan penyimpanan history scan
-- tambahkan endpoint API terpisah untuk integrasi eksternal
-- tambahkan evaluasi metrik seperti mAP dan confusion matrix
-- tambahkan autentikasi jika web app dipakai multi-user
+- add scan history persistence
+- expose a separate API endpoint for external integrations
+- add evaluation metrics such as mAP and confusion matrix reporting
+- add authentication if the web app will be used by multiple users
 
 ## 📜 License
 
-Silakan tambahkan lisensi sesuai kebutuhan distribusi project Anda.
+Add the license that best matches how you want to distribute this project.
